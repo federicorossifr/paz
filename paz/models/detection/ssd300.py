@@ -5,7 +5,7 @@ from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.utils import get_file
-
+import tensorflow as tf
 from ..layers import Conv2DNormalization
 from .utils import create_multibox_head
 from .utils import create_prior_boxes
@@ -17,7 +17,7 @@ WEIGHT_PATH = (
 
 def SSD300(num_classes=21, base_weights='VOC', head_weights='VOC',
            input_shape=(300, 300, 3), num_priors=[4, 6, 6, 6, 4, 4],
-           l2_loss=0.0005, return_base=False, trainable_base=True):
+           l2_loss=0.0005, return_base=False, trainable_base=True,ctype = "float32"):
 
     """Single-shot-multibox detector for 300x300x3 BGR input images.
     # Arguments
@@ -40,7 +40,7 @@ def SSD300(num_classes=21, base_weights='VOC', head_weights='VOC',
         - [SSD: Single Shot MultiBox
             Detector](https://arxiv.org/abs/1512.02325)
     """
-
+   
     if base_weights not in ['VGG', 'VOC', 'FAT', None]:
         raise ValueError('Invalid `base_weights`:', base_weights)
 
@@ -58,6 +58,10 @@ def SSD300(num_classes=21, base_weights='VOC', head_weights='VOC',
 
     if ((num_classes != 22) and (head_weights == 'FAT')):
         raise ValueError('Invalid `head_weights` with given `num_classes`')
+
+
+    tf.keras.backend.set_floatx(ctype)
+    print("+++++++++++++++++++++================Using floatx: ",tf.keras.backend.floatx())
 
     image = Input(shape=input_shape, name='image')
 

@@ -14,10 +14,28 @@ class_dict = {
     class_name: class_arg for class_arg, class_name in enumerate(class_names)
 }
 
-voc_root = './examples/object_detection/data/VOCdevkit'
+voc_root = './VOCdevkit'
 
 
-def test(weights_path):
+def compress_weights(weights,type):
+  new_weights = [w.astype(type) for w in weights]
+  #new_weights = [w if w != float("inf") else np.finfo(w.dtype).max for w in new_weights ]
+  return new_weights
+
+def compute_mse(weights,weightsc):
+  mse = 0
+  for i in range(len(weights)):
+    curr = np.sqrt( np.square( np.subtract(weights[i],weightsc[i] ) ).mean() )
+    if curr == float("inf"):
+      mse = mse 
+    else:
+      mse = mse+curr
+  print(len(weightsc))
+  return mse/len(weights)
+
+
+
+def test():
     """
     Arguments:
         weights_path: model path to be evaluated
@@ -26,15 +44,21 @@ def test(weights_path):
     """
     score_thresh, nms_thresh, labels = 0.01, .45, get_class_names('VOC')
 
-    model = SSD300()
-    model.load_weights(weights_path)
+    model = SSD300(ctype="float32")
+    #model.load_weights()
+    weights = model.get_weights()
+    new_weights = compress_weights(weights,"float32")
+    print(compute_mse(weights,new_weights))
+    model.set_weights(new_weights)
     detector = DetectSingleShot(model, labels, score_thresh, nms_thresh)
 
     data_name = 'VOC2007'
     data_split = 'test'
     data_manager = VOC(voc_root, data_split, name=data_name, evaluate=True)
     dataset = data_manager.load_data()
-
+    dataset = dataset[0:100]
+    print(type(dataset))
+    print("Started evaluation on ", len(dataset), " images")
     result = evaluateMAP(
         detector,
         dataset,
@@ -52,10 +76,10 @@ def test(weights_path):
     print(result_str)
 
 
-description = 'Test script for single-shot object detection models'
-parser = argparse.ArgumentParser(description=description)
-parser.add_argument('-wp', '--weights_path', default=None,
-                    type=str, help='Path for model to be evaluated')
-args = parser.parse_args()
+#description = 'Test script for single-shot object detection models'
+#parser = argparse.ArgumentParser(description=description)
+#parser.add_argument('-wp', '--weights_path', default=None,
+                    #type=str, help='Path for model to be evaluated')
+#args = parser.parse_args()
 
-test(args.weights_path)
+test()

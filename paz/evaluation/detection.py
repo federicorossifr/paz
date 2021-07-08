@@ -1,9 +1,10 @@
 import numpy as np
 from ..backend.boxes import compute_ious
 from ..backend.image import load_image
+from ..backend.image import cast_image
+import tensorflow as tf
 
-
-def compute_matches(dataset, detector, class_to_arg, iou_thresh=0.5):
+def compute_matches(dataset, detector, class_to_arg, iou_thresh=0.5,ctype="float32"):
     """
     Arguments:
         dataset: List of dictionaries containing 'image' as key and a
@@ -23,8 +24,11 @@ def compute_matches(dataset, detector, class_to_arg, iou_thresh=0.5):
     num_positives = {label_id: 0 for label_id in range(1, num_classes + 1)}
     score = {label_id: [] for label_id in range(1, num_classes + 1)}
     match = {label_id: [] for label_id in range(1, num_classes + 1)}
+    count = 1
     for sample in dataset:
         # obtaining ground truths
+        print("Evaluating: ",count, "/",len(dataset))
+        count = count+1
         ground_truth_boxes = np.array(sample['boxes'][:, :4])
         ground_truth_class_args = np.array(sample['boxes'][:, 4])
         if 'difficulties' in sample.keys():
@@ -33,6 +37,7 @@ def compute_matches(dataset, detector, class_to_arg, iou_thresh=0.5):
             difficulties = None
         # obtaining predictions
         image = load_image(sample['image'])
+        image = image.astype(ctype)
         results = detector(image)
         predicted_boxes, predicted_class_args, predicted_scores = [], [], []
         for box2D in results['boxes2D']:
@@ -186,7 +191,7 @@ def calculate_average_precisions(precision, recall, use_07_metric=False):
 
 
 def evaluateMAP(detector, dataset, class_to_arg, iou_thresh=0.5,
-                use_07_metric=False):
+                use_07_metric=False,ctype="float32"):
     """Calculate average precisions based on evaluation code of PASCAL VOC.
     Arguments:
         dataset: List of dictionaries containing 'image' as key and a
@@ -198,7 +203,7 @@ def evaluateMAP(detector, dataset, class_to_arg, iou_thresh=0.5,
     # Returns:
     """
     positives, score, match = compute_matches(
-        dataset, detector, class_to_arg, iou_thresh)
+        dataset, detector, class_to_arg, iou_thresh,ctype=ctype)
     precision, recall = calculate_relevance_metrics(positives, score, match)
     average_precisions = calculate_average_precisions(
         precision, recall, use_07_metric)

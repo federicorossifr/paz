@@ -26,7 +26,7 @@ echo "Completed in" $runtime "seconds"
 
 
 start=`date +%s`
-
+exit
 # handle optional download dir
 
 echo "Downloading VOC2012 trainval ..."
